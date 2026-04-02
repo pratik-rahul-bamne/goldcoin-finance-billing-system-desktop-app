@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Backup &amp; Restore{% endblock %}
+{% block page_icon %}💾{% endblock %}
+{% block page_title %}Backup &amp; Restore{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Data backup &amp; restore</h1>
+    <div class="breadcrumb">Dashboard &rsaquo; Backup &amp; Restore</div>
+  </div>
+</div>
+
+<p class="text-muted" style="max-width:52rem; margin-bottom:1.25rem;">
+  Exports all database tables to one Excel file (one sheet per table). Manual backups are never overwritten—each run creates a new timestamped file under <code>backup_files</code>.
+  Import supports <strong>append</strong> (merge) or <strong>replace</strong> (clear customers, services, payments, and catalog, then load from file). Logs are written to <code>logs/backup.log</code>.
+</p>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start;">
+
+  <div class="form-section">
+    <div class="form-section-title">📤 Create backup</div>
+    <p class="form-hint" style="margin-bottom:14px;">Writes <code>.xlsx</code> with sheets: settings, service_catalog, customers, services, payments.</p>
+    <form method="POST" action="{{ url_for('backup_run') }}">
+      <button type="submit" class="btn btn-gold" style="width:100%;">Backup now</button>
+    </form>
+    <form method="POST" action="{{ url_for('backup_cleanup') }}" style="margin-top:12px;" onsubmit="return confirm('Delete old backup files (keep 10 newest, older than 90 days)?');">
+      <button type="submit" class="btn btn-outline" style="width:100%;">Run retention cleanup</button>
+    </form>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">📥 Import from Excel</div>
+    <p class="form-hint" style="margin-bottom:12px;">Only <code>.xlsx</code> from this app’s backup format. Validate first, then import.</p>
+    <form method="POST" action="{{ url_for('backup_import') }}" enctype="multipart/form-data">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Excel file</label>
+        <input type="file" name="file" class="form-control" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">Mode</label>
+        <select name="mode" class="form-control">
+          <option value="append">Append / merge (keeps existing rows; remaps customer IDs from file)</option>
+          <option value="replace">Replace data (clears customers, services, payments, catalog — not settings unless checked below)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label">If mobile already exists (append only)</label>
+        <select name="duplicate_mobile" class="form-control">
+          <option value="reuse">Reuse existing customer row (recommended)</option>
+          <option value="error">Stop with error</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" name="merge_settings" value="1" />
+          Also merge <code>settings</code> from file (can overwrite admin password hash)
+        </label>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" name="action" value="validate" class="btn btn-primary" style="flex:1;">Validate file</button>
+        <button type="submit" name="action" value="import" class="btn btn-gold" style="flex:1;" onclick="return confirm('Run import? For replace mode this deletes current business data.');">Import data</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if preview %}
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <div class="card-title">✅ Validation preview</div>
+  </div>
+  <div class="card-body" style="padding:0;">
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Table</th><th>Rows in file</th><th>Columns</th></tr>
+      </thead>
+      <tbody>
+        {% for t, meta in preview.tables.items() %}
+        <tr>
+          <td><strong>{{ t }}</strong></td>
+          <td>{{ meta.row_count }}</td>
+          <td style="font-size:0.85rem; color:var(--text-muted, #666);">{{ meta.columns_ok | join(', ') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <div class="card-title">📁 Recent backups</div>
+    <span class="badge badge-navy">{{ backups|length }} shown</span>
+  </div>
+  <div class="card-body" style="padding:0;">
+    {% if backups %}
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>File</th><th>Size</th><th>Modified</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for b in backups %}
+        <tr>
+          <td><code>{{ b.name }}</code></td>
+          <td>{{ (b.size_bytes / 1024) | round(1) }} KB</td>
+          <td>{{ b.modified }}</td>
+          <td><a class="btn btn-sm btn-outline" href="{{ url_for('backup_download', filename=b.name) }}">Download</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p style="padding:1rem 1.25rem; margin:0; color:#666;">No backups yet. Use “Backup now”.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

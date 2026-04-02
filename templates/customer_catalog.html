@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}All Customers{% endblock %}
+{% block page_icon %}👥{% endblock %}
+{% block page_title %}Customer Directory{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Customer Directory</h1>
+    <div class="breadcrumb">Dashboard &rsaquo; All Customers</div>
+  </div>
+  <a href="{{ url_for('add_customer') }}" class="btn btn-gold">➕ Add Customer</a>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">🔍 Search Customers</div>
+    <span class="badge badge-navy">{{ customers|length }} found</span>
+  </div>
+  <div class="card-body" style="padding-bottom: 0;">
+    <form method="GET" action="{{ url_for('customer_catalog') }}">
+      <div class="d-flex gap-12 mb-16">
+        <div class="search-bar" style="flex:1;">
+          <span class="search-icon">🔍</span>
+          <input type="text" name="search" placeholder="Search by name or mobile number..." value="{{ search_query }}" />
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+        {% if search_query %}
+        <a href="{{ url_for('customer_catalog') }}" class="btn btn-outline">✕ Clear</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="table-wrap">
+    {% if customers %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Mobile</th>
+          <th>Village</th>
+          <th>Bank</th>
+          <th>Loan Amount</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td class="text-muted" style="font-size:0.78rem;">{{ loop.index }}</td>
+          <td>
+            <div class="customer-chip">
+              <div class="customer-avatar">{{ c.name[0].upper() }}</div>
+              <div>
+                <div class="customer-name">{{ c.name }}</div>
+                {% if c.business_name %}<div class="customer-mobile">{{ c.business_name }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><span style="font-family:monospace; font-size:0.85rem;">{{ c.mobile }}</span></td>
+          <td>{{ c.village or '—' }}</td>
+          <td>{{ c.bank_name or '—' }}</td>
+          <td>
+            {% if c.loan_amount %}
+              <span class="amount amount-neutral">₹{{ "{:,.0f}".format(c.loan_amount) }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-8">
+              <a href="{{ url_for('bill', customer_id=c.id) }}" class="btn btn-outline-gold btn-xs">📄 Ledger</a>
+              <a href="{{ url_for('add_services', customer_id=c.id) }}" class="btn btn-outline btn-xs">🔧 Services</a>
+              <a href="{{ url_for('add_payment', customer_id=c.id) }}" class="btn btn-outline btn-xs">💰 Payment</a>
+              <a href="{{ url_for('edit_customer', customer_id=c.id) }}" class="btn btn-outline btn-xs">✏️</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="table-empty">
+      <div class="empty-icon">🔍</div>
+      <p>{% if search_query %}No customers found for "{{ search_query }}"{% else %}No customers yet{% endif %}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

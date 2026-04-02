@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login — Gold Coin Consultancy</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <div class="login-logo-icon">🪙</div>
+      <div>
+        <div class="login-logo-name">Gold Coin Consultancy<br/>Finance Services</div>
+        <div class="login-logo-sub">Billing & Ledger Management System</div>
+      </div>
+    </div>
+
+    <div class="login-divider"></div>
+
+    <div class="login-heading">Admin Sign In</div>
+    <p class="login-sub">Enter your password to access the billing system.</p>
+
+    {% if error %}
+    <div class="login-error">
+      <span>🔐</span>
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('login') }}" autocomplete="off">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label class="form-label" for="password">
+          Password <span class="required">*</span>
+        </label>
+        <div class="password-field">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="form-control"
+            placeholder="Enter admin password"
+            autofocus
+            required
+          />
+          <button type="button" class="password-toggle" onclick="togglePassword()" id="toggleBtn" title="Show/Hide password">
+            👁️
+          </button>
+        </div>
+        <div class="form-hint" style="margin-top: 6px;">Default password: <code style="background:#F1F4F8; padding:2px 6px; border-radius:4px; font-size:0.8rem;">admin123</code></div>
+      </div>
+
+      <button type="submit" class="login-btn">
+        🔓 Sign In to Dashboard
+      </button>
+    </form>
+
+    <div class="login-footer-text">
+      Gold Coin Consultancy Finance Services<br/>
+      Vita, Dist. Sangli — Maharashtra
+    </div>
+    <div class="login-developer-credit">
+      {{ developer_credit }}<br/>
+      <a href="mailto:{{ developer_email }}">{{ developer_email }}</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function togglePassword() {
+    const input = document.getElementById('password');
+    const btn = document.getElementById('toggleBtn');
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      btn.textContent = '👁️';
+    }
+  }
+  // Allow Enter key to submit
+  document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') e.target.form.submit();
+  });
+</script>
+</body>
+</html>

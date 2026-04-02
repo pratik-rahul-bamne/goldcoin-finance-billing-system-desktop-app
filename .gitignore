@@ -1,0 +1,8 @@
+backup_files/
+logs/
+__pycache__/
+*.pyc
+.env
+.venv/
+build/
+dist/

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Payments — {{ customer.name }}{% endblock %}
+{% block page_icon %}💰{% endblock %}
+{% block page_title %}Record Payment{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Payments — {{ customer.name }}</h1>
+    <div class="breadcrumb">
+      <a href="{{ url_for('index') }}">Dashboard</a> &rsaquo;
+      <a href="{{ url_for('bill', customer_id=customer.id) }}">{{ customer.name }}</a>
+      &rsaquo; Payments
+    </div>
+  </div>
+  <div class="d-flex gap-8">
+    <a href="{{ url_for('bill', customer_id=customer.id) }}" class="btn btn-outline-gold">📄 View Ledger</a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">← Back</a>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:380px 1fr; gap:20px;">
+
+  <!-- Payment Form -->
+  <div class="form-section" style="margin-bottom:0; height:fit-content;">
+    <div class="form-section-title">💰 Record New Payment</div>
+    <form method="POST" action="{{ url_for('add_payment', customer_id=customer.id) }}">
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Payment Date <span class="required">*</span></label>
+        <input type="date" name="date" class="form-control" value="{{ today }}" required />
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Amount Received (₹) <span class="required">*</span></label>
+        <input type="number" name="amount" class="form-control" placeholder="0.00" min="0.01" step="0.01" required autofocus />
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">Note (Optional)</label>
+        <input type="text" name="note" class="form-control" placeholder="e.g. Cash, UPI, Cheque #1234" />
+      </div>
+      <button type="submit" class="btn btn-success" style="width:100%;">✅ Record Payment</button>
+    </form>
+  </div>
+
+  <!-- Payment History -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📜 Payment History</div>
+      <span class="badge badge-success">{{ payments|length }} payments</span>
+    </div>
+    {% if payments %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Amount</th><th>Note</th><th>Action</th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td style="font-size:0.85rem; font-weight:500;">{{ p.date }}</td>
+            <td><span class="amount amount-positive">₹{{ "{:,.0f}".format(p.amount) }}</span></td>
+            <td class="text-muted" style="font-size:0.82rem;">{{ p.note or '—' }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('delete_payment', payment_id=p.id) }}"
+                    onsubmit="return confirm('Delete this payment entry?')">
+                <button type="submit" class="btn btn-xs" style="background:var(--danger-bg);color:var(--danger);">🗑️</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:14px 16px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <strong style="font-size:0.9rem; color:var(--navy);">Total Received</strong>
+      <strong style="font-size:1.1rem; color:var(--success);">₹{{ "{:,.0f}".format(payments|sum(attribute='amount')) }}</strong>
+    </div>
+    {% else %}
+    <div class="table-empty">
+      <div class="empty-icon">💸</div>
+      <p>No payments recorded yet</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
