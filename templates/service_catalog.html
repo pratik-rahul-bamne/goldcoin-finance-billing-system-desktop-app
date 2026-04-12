@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Service Catalog{% endblock %}
+{% block page_icon %}📋{% endblock %}
+{% block page_title %}Service Catalog{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Service Catalog</h1>
+    <div class="breadcrumb">Dashboard &rsaquo; Service Catalog</div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns:340px 1fr; gap:20px;">
+
+  <!-- Add Service Form -->
+  <div>
+    <div class="form-section" style="margin-bottom:20px;">
+      <div class="form-section-title">➕ Add New Service</div>
+      <form method="POST" action="{{ url_for('add_catalog_service') }}">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label">Service Name <span class="required">*</span></label>
+          <input type="text" name="service_name" class="form-control" placeholder="e.g. CIBIL Report" required />
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label">Default Charge (₹)</label>
+          <input type="number" name="default_charge" class="form-control" placeholder="0" min="0" step="0.01" />
+          <div class="form-hint">Leave 0 to enter charge per-customer</div>
+        </div>
+        <button type="submit" class="btn btn-gold" style="width:100%;">➕ Add Service</button>
+      </form>
+    </div>
+
+    <!-- Change Password -->
+    <div class="form-section" style="margin-bottom:0;">
+      <div class="form-section-title">🔐 Change Admin Password</div>
+      <form method="POST" action="{{ url_for('change_password') }}">
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">Current Password</label>
+          <input type="password" name="current_password" class="form-control" placeholder="Current password" required />
+        </div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label class="form-label">New Password</label>
+          <input type="password" name="new_password" class="form-control" placeholder="Min 4 characters" required />
+        </div>
+        <div class="form-group" style="margin-bottom:20px;">
+          <label class="form-label">Confirm New Password</label>
+          <input type="password" name="confirm_password" class="form-control" placeholder="Repeat new password" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;">🔒 Update Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Services Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📋 All Services</div>
+      <span class="badge badge-navy">{{ services|length }} services</span>
+    </div>
+    <div class="table-wrap">
+      {% if services %}
+      <table>
+        <thead>
+          <tr><th>#</th><th>Service Name</th><th>Default Charge</th><th>Status</th><th>Update</th></tr>
+        </thead>
+        <tbody>
+          {% for s in services %}
+          <tr>
+            <td class="text-muted" style="font-size:0.78rem;">{{ loop.index }}</td>
+            <td style="font-weight:600; font-size:0.88rem;">{{ s.service_name }}</td>
+            <td>
+              {% if s.default_charge > 0 %}
+                <span class="amount amount-neutral">₹{{ "{:,.0f}".format(s.default_charge) }}</span>
+              {% else %}
+                <span class="text-muted">Custom</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.is_active %}
+                <span class="badge badge-success">● Active</span>
+              {% else %}
+                <span class="badge badge-danger">● Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('edit_catalog_service', service_id=s.id) }}" class="d-flex gap-8 align-center">
+                <input type="number" name="default_charge" value="{{ s.default_charge }}"
+                       class="form-control" style="width:90px; padding:6px 10px; font-size:0.82rem;" min="0" step="0.01" />
+                <select name="is_active" class="form-control" style="width:90px; padding:6px 8px; font-size:0.82rem;">
+                  <option value="1" {% if s.is_active %}selected{% endif %}>Active</option>
+                  <option value="0" {% if not s.is_active %}selected{% endif %}>Inactive</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-xs">Save</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="table-empty">
+        <div class="empty-icon">📋</div>
+        <p>No services in catalog</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

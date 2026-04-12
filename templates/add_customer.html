@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Add Customer{% endblock %}
+{% block page_icon %}➕{% endblock %}
+{% block page_title %}Add Customer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Add New Customer</h1>
+    <div class="breadcrumb">
+      <a href="{{ url_for('index') }}">Dashboard</a> &rsaquo; Add Customer
+    </div>
+  </div>
+  <a href="{{ url_for('index') }}" class="btn btn-outline">← Back</a>
+</div>
+
+<form method="POST" action="{{ url_for('add_customer') }}">
+  <div class="form-section">
+    <div class="form-section-title">👤 Personal Information</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" for="name">Full Name <span class="required">*</span></label>
+        <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Pratik Rahul Bamne" required autofocus />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="mobile">Mobile Number <span class="required">*</span></label>
+        <input type="tel" id="mobile" name="mobile" class="form-control" placeholder="e.g. 7820828755" required maxlength="15" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="e.g. pratikrbamne@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="business_name">Business / Firm Name</label>
+        <input type="text" id="business_name" name="business_name" class="form-control" placeholder="e.g. PB Dev" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="village">Village / Taluka</label>
+        <input type="text" id="village" name="village" class="form-control" placeholder="e.g. Vita, Khanapur" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="customer_date">Customer Since</label>
+        <input type="date" id="customer_date" name="customer_date" class="form-control" value="{{ today }}" />
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">🏦 Loan / Bank Details</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label class="form-label" for="bank_name">Bank Name</label>
+        <input type="text" id="bank_name" name="bank_name" class="form-control" placeholder="e.g. BOB (Bank of Baroda)" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loan_amount">Loan Amount (₹)</label>
+        <input type="number" id="loan_amount" name="loan_amount" class="form-control" placeholder="e.g. 100000" min="0" step="0.01" />
+        <div class="form-hint">Enter the total loan amount sanctioned</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-gold">✅ Save Customer</button>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">Cancel</a>
+  </div>
+</form>
+{% endblock %}

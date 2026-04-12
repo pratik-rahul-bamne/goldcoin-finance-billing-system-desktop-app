@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Restore Data{% endblock %}
+{% block page_icon %}🔁{% endblock %}
+{% block page_title %}Restore Data{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">Import Data from Excel Backup</div>
+  </div>
+  <div class="card-body">
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('restore') }}">
+      <div class="form-group">
+        <label for="file">Choose .xlsx file</label>
+        <input type="file" id="file" name="file" class="form-control" accept=".xlsx" required>
+      </div>
+      <div class="form-group">
+        <label for="mode">Mode</label>
+        <select id="mode" name="mode" class="form-control">
+          <option value="append">Append (INSERT OR IGNORE)</option>
+          <option value="replace">Replace (DELETE + INSERT OR REPLACE)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Restore Data</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Dashboard</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

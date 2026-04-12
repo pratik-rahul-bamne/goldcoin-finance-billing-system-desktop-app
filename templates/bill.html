@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+{% block title %}Ledger — {{ customer.name }}{% endblock %}
+{% block page_icon %}📄{% endblock %}
+{% block page_title %}Customer Ledger{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div>
+    <h1>Ledger — {{ customer.name }}</h1>
+    <div class="breadcrumb">
+      <a href="{{ url_for('index') }}">Dashboard</a> &rsaquo; {{ customer.name }} &rsaquo; Ledger
+    </div>
+  </div>
+  <div class="d-flex gap-8">
+    <a href="{{ url_for('add_services', customer_id=customer.id) }}" class="btn btn-outline btn-sm">🔧 Services</a>
+    <a href="{{ url_for('add_payment', customer_id=customer.id) }}" class="btn btn-outline btn-sm">💰 Payment</a>
+    <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
+    <a href="{{ url_for('download_pdf', customer_id=customer.id) }}" class="btn btn-primary btn-sm">⬇️ PDF</a>
+    <button id="print-btn" class="btn btn-outline-gold btn-sm">🖨️ Print</button>
+  </div>
+</div>
+
+<!-- Bill Card -->
+<div class="bill-card">
+
+  <!-- Header -->
+  <div class="bill-header">
+    <div class="bill-company-name">GOLD COIN CONSULTANCY FINANCE SERVICES</div>
+    <div class="bill-company-sub">Professional Financial Consultancy</div>
+  </div>
+  <div class="bill-title-banner">LEDGER ACCOUNT</div>
+
+  <!-- Customer Info -->
+  <div class="bill-info-grid" style="margin-top:20px;">
+    <div class="bill-info-label">Customer Name</div>
+    <div class="bill-info-value"><strong>{{ customer.name }}</strong></div>
+    <div class="bill-info-label">Date</div>
+    <div class="bill-info-value">{{ current_date }}</div>
+
+    {% if customer.business_name %}
+    <div class="bill-info-label">Business Name</div>
+    <div class="bill-info-value">{{ customer.business_name }}</div>
+    <div class="bill-info-label"></div>
+    <div class="bill-info-value"></div>
+    {% endif %}
+
+    <div class="bill-info-label">Mobile No.</div>
+    <div class="bill-info-value">{{ customer.mobile }}</div>
+    <div class="bill-info-label">Village</div>
+    <div class="bill-info-value">{{ customer.village or '—' }}</div>
+
+    <div class="bill-info-label">Bank Name</div>
+    <div class="bill-info-value">{{ customer.bank_name or '—' }}</div>
+    <div class="bill-info-label">Loan Amount</div>
+    <div class="bill-info-value">
+      {% if customer.loan_amount %}₹{{ "{:,.0f}".format(customer.loan_amount) }}{% else %}—{% endif %}
+    </div>
+  </div>
+
+  <!-- Ledger Table -->
+  <div class="ledger-table">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:105px;">Date</th>
+          <th>Particulars</th>
+          <th style="width:115px; text-align:right;">Credit (₹)</th>
+          <th style="width:115px; text-align:right;">Received (₹)</th>
+          <th style="width:115px; text-align:right;">Balance (₹)</th>
+          <th class="no-print" style="width:70px;">Del</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set running = namespace(val=0) %}
+
+        {% for s in services %}
+          {% set running.val = running.val + s.charge %}
+          <tr>
+            <td style="font-size:0.82rem; color:var(--text-3);">{{ s.created_at[:10] if s.created_at else '—' }}</td>
+            <td style="font-size:0.88rem;">{{ s.service_name }}</td>
+            <td style="text-align:right; font-weight:600; color:var(--navy);">{{ "{:,.0f}".format(s.charge) }}</td>
+            <td style="text-align:right; color:var(--text-3);">—</td>
+            <td style="text-align:right; font-weight:600;">{{ "{:,.0f}".format(running.val) }}</td>
+            <td class="no-print">
+              <form method="POST" action="{{ url_for('delete_service', service_id=s.id) }}"
+                    onsubmit="return confirm('Remove this service?')">
+                <button type="submit" class="btn btn-xs" style="background:var(--danger-bg);color:var(--danger);">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+
+        {% if services %}
+        <tr class="total-row">
+          <td></td>
+          <td style="text-align: right;"><strong>TOTAL CHARGES</strong></td>
+          <td style="text-align:right;"><strong>{{ "{:,.0f}".format(total_charges) }}</strong></td>
+          <td style="text-align:right;">—</td>
+          <td style="text-align:right;"><strong>{{ "{:,.0f}".format(total_charges) }}</strong></td>
+          <td class="no-print"></td>
+        </tr>
+        {% endif %}
+
+        {% for p in payments %}
+          {% set running.val = running.val - p.amount %}
+          <tr class="payment-row">
+            <td style="font-size:0.82rem;">{{ p.date }}</td>
+            <td style="font-size:0.88rem;">Payment Received{% if p.note %} <span style="opacity:0.7">({{ p.note }})</span>{% endif %}</td>
+            <td style="text-align:right; color:#065F46;">—</td>
+            <td style="text-align:right; font-weight:600; color:#065F46;">{{ "{:,.0f}".format(p.amount) }}</td>
+            <td style="text-align:right; font-weight:600; color:#065F46;">{{ "{:,.0f}".format(running.val) }}</td>
+            <td class="no-print">
+              <form method="POST" action="{{ url_for('delete_payment', payment_id=p.id) }}"
+                    onsubmit="return confirm('Delete this payment?')">
+                <button type="submit" class="btn btn-xs" style="background:var(--danger-bg);color:var(--danger);">✕</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+
+        {% if not services and not payments %}
+        <tr>
+          <td colspan="6" class="table-empty">No transactions yet.</td>
+        </tr>
+        {% endif %}
+
+        <tr class="balance-row">
+          <td></td>
+          <td colspan="3" style="text-align: right;"><strong>FINAL BALANCE DUE</strong></td>
+          <td style="text-align:right;"><strong>₹{{ "{:,.0f}".format(balance) }}</strong></td>
+          <td class="no-print"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Balance Summary -->
+  {% if balance <= 0 %}
+  <div class="bill-summary-box paid" style="margin:0 28px 20px;">
+    <div>
+      <div class="bill-summary-label">Account Status</div>
+      <div class="bill-summary-value">✅ FULLY PAID</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="bill-summary-label">Balance Due</div>
+      <div class="bill-summary-value">₹ 0</div>
+    </div>
+  </div>
+  {% else %}
+  <div class="bill-summary-box unpaid" style="margin:0 28px 20px;">
+    <div>
+      <div class="bill-summary-label">Account Status</div>
+      <div class="bill-summary-value">⚠️ OUTSTANDING</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="bill-summary-label">Balance Due</div>
+      <div class="bill-summary-value">₹{{ "{:,.0f}".format(balance) }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  <p style="text-align:center; font-size:0.75rem; color:var(--text-3); margin-bottom:16px;">
+    E. &amp; O.E. — Errors and Omissions Excepted
+  </p>
+
+  <!-- Footer -->
+  <div class="bill-footer">
+    <div class="bill-footer-section">
+      <h4>Gold Coin Consultancy Finance Services</h4>
+      <p>Laxmi Narayan Nivas Samor,<br/>Savarkar Nagar, Vita, Khanapur,<br/>Dist. Sangli - 415311</p>
+    </div>
+    <div class="bill-footer-section">
+      <h4>Contact Numbers</h4>
+      <p>Ravikiran: +91 84216 24116<br/>Shriyash: +91 90216 74548</p>
+    </div>
+    <div class="bill-footer-section">
+      <h4>Services Offered</h4>
+      <p>Personal Loan, Business Loan, Mortgage Loan, Home Loan, Vehicle Loan, CMEGP/PMEGP, Annasaheb Patil Mahamandal Loans</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  /**
+   * Single-page print auto-scaler
+   * Measures the bill card height before each print and shrinks it
+   * proportionally so it always fits exactly on one A4 page.
+   * A4 at 96dpi screen resolution ≈ 1122px tall (297mm).
+   */
+  const A4_HEIGHT_PX = 1122;   // 297mm × (96/25.4) px/mm
+  const A4_WIDTH_PX  = 794;    // 210mm × (96/25.4)
+
+  function scaleToOnePage() {
+    const card = document.querySelector('.bill-card');
+    if (!card) return;
+
+    // Reset any previous scale so we measure the true height
+    card.style.transform = '';
+    card.style.width     = '';
+
+    const cardH = card.scrollHeight;
+    const cardW = card.scrollWidth;
+
+    const scaleH = A4_HEIGHT_PX / cardH;
+    const scaleW = A4_WIDTH_PX  / cardW;
+    const scale  = Math.min(scaleH, scaleW, 1); // never scale UP
+
+    if (scale < 1) {
+      card.style.transformOrigin = 'top left';
+      card.style.transform       = `scale(${scale})`;
+      // Collapse the space the card would have occupied after scaling
+      card.style.marginBottom    = `-${cardH * (1 - scale)}px`;
+    }
+  }
+
+  function resetScale() {
+    const card = document.querySelector('.bill-card');
+    if (!card) return;
+    card.style.transform    = '';
+    card.style.marginBottom = '';
+    card.style.width        = '';
+  }
+
+  // Fire before browser opens print dialog
+  window.addEventListener('beforeprint', scaleToOnePage);
+  window.addEventListener('afterprint',  resetScale);
+
+  // Also hook the Print button explicitly for safety
+  document.querySelectorAll('#print-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      scaleToOnePage();
+      setTimeout(() => { window.print(); }, 50);
+    });
+  });
+</script>
+{% endblock %}
