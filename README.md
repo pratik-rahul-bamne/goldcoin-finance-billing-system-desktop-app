@@ -1,5 +1,19 @@
 # Gold Coin Billing System
 
+# Branches
+
+## main
+- Original stable Version 1 of the Gold Coin Finance Billing System.
+
+## v2
+- Latest Version 2 with enhanced UI and UX.
+- Improved invoice generation.
+- PDF export enhancements.
+- Backup & Restore functionality.
+- Email integration.
+- Performance optimizations.
+- Bug fixes and new features.
+
 ## Windows Installer Setup
 
 This project includes a professional Windows installer that creates a complete installation package for the Gold Coin Consultancy Billing System.
