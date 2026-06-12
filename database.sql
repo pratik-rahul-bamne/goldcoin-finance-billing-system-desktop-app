@@ -33,6 +33,13 @@ Please find attached the statement of your ledger account.
 Regards,
 Gold Coin Consultancy');
 
+-- Birthday Email Settings
+INSERT OR IGNORE INTO settings (key, value) VALUES ('birthday_emails_enabled', '0');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('birthday_email_time', '09:00');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('birthday_sender_email', 'support@goldcoinfinance.com');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('birthday_send_html', '1');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('birthday_include_offer', '0');
+
 -- Customers table
 CREATE TABLE IF NOT EXISTS customers (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,6 +51,7 @@ CREATE TABLE IF NOT EXISTS customers (
     bank_name     TEXT DEFAULT '',
     loan_amount   REAL DEFAULT 0,
     customer_date TEXT,
+    birth_date    TEXT,
     created_at    TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
@@ -75,12 +83,22 @@ CREATE TABLE IF NOT EXISTS payments (
     created_at  TEXT DEFAULT (datetime('now', 'localtime'))
 );
 
+-- Birthday logs table
+CREATE TABLE IF NOT EXISTS birthday_logs (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    sent_year   INTEGER NOT NULL,
+    sent_at     TEXT DEFAULT (datetime('now', 'localtime')),
+    status      TEXT NOT NULL
+);
+
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_services_customer      ON services(customer_id);
 CREATE INDEX IF NOT EXISTS idx_payments_customer      ON payments(customer_id);
 CREATE INDEX IF NOT EXISTS idx_service_catalog_active ON service_catalog(is_active);
 CREATE INDEX IF NOT EXISTS idx_customers_name         ON customers(name);
 CREATE INDEX IF NOT EXISTS idx_customers_mobile       ON customers(mobile);
+CREATE INDEX IF NOT EXISTS idx_birthday_logs_customer ON birthday_logs(customer_id);
 
 -- Pre-seeded service catalog (17 standard services)
 INSERT OR IGNORE INTO service_catalog (service_name, default_charge) VALUES

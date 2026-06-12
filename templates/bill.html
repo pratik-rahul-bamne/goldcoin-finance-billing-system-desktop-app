@@ -26,8 +26,13 @@
 
   <!-- Header -->
   <div class="bill-header">
-    <div class="bill-company-name">GOLD COIN CONSULTANCY FINANCE SERVICES</div>
-    <div class="bill-company-sub">Professional Financial Consultancy</div>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 64px; width: auto; border-radius: 50%; border: 2px solid var(--gold);" />
+      <div style="text-align: left;">
+        <div class="bill-company-name">GOLD COIN CONSULTANCY FINANCE SERVICES</div>
+        <div class="bill-company-sub" style="margin-top: 5px;">Professional Financial Consultancy</div>
+      </div>
+    </div>
   </div>
   <div class="bill-title-banner">LEDGER ACCOUNT</div>
 

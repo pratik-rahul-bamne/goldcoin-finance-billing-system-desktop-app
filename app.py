@@ -72,6 +72,42 @@ def init_db():
     with open(schema_path, 'r', encoding='utf-8') as f:
         conn.executescript(f.read())
     conn.commit()
+    
+    # Run migrations for existing databases
+    try:
+        conn.execute("ALTER TABLE customers ADD COLUMN birth_date TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        # birth_date column already exists
+        pass
+
+    try:
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS birthday_logs (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+            sent_year   INTEGER NOT NULL,
+            sent_at     TEXT DEFAULT (datetime('now', 'localtime')),
+            status      TEXT NOT NULL
+        )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_birthday_logs_customer ON birthday_logs(customer_id)")
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        print(f"Error creating birthday logs table: {e}")
+
+    # Seed new default settings if not exists
+    birthday_defaults = [
+        ('birthday_emails_enabled', '0'),
+        ('birthday_email_time', '09:00'),
+        ('birthday_sender_email', 'support@goldcoinfinance.com'),
+        ('birthday_send_html', '1'),
+        ('birthday_include_offer', '0')
+    ]
+    for key, val in birthday_defaults:
+        conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)", (key, val))
+    conn.commit()
+    
     conn.close()
     print(f"[OK] SQLite database ready at: {DB_PATH}")
 
@@ -195,13 +231,14 @@ def add_customer():
         email         = request.form.get('email', '').strip()
         business_name = request.form.get('business_name', '').strip()
         village       = request.form.get('village', '').strip()
+        birth_date    = request.form.get('birth_date', '').strip()
         bank_name     = request.form.get('bank_name', '').strip()
         loan_amount   = request.form.get('loan_amount', 0) or 0
         customer_date = request.form.get('customer_date') or datetime.now().strftime('%Y-%m-%d')
         conn = get_db()
         conn.execute(
-            'INSERT INTO customers (name,mobile,email,business_name,village,bank_name,loan_amount,customer_date) VALUES (?,?,?,?,?,?,?,?)',
-            (name, mobile, email, business_name, village, bank_name, loan_amount, customer_date)
+            'INSERT INTO customers (name,mobile,email,business_name,village,bank_name,loan_amount,customer_date,birth_date) VALUES (?,?,?,?,?,?,?,?,?)',
+            (name, mobile, email, business_name, village, bank_name, loan_amount, customer_date, birth_date)
         )
         conn.commit()
         conn.close()
@@ -216,11 +253,11 @@ def edit_customer(customer_id):
     conn = get_db()
     if request.method == 'POST':
         conn.execute(
-            'UPDATE customers SET name=?,mobile=?,email=?,business_name=?,village=?,bank_name=?,loan_amount=?,customer_date=? WHERE id=?',
+            'UPDATE customers SET name=?,mobile=?,email=?,business_name=?,village=?,bank_name=?,loan_amount=?,customer_date=?,birth_date=? WHERE id=?',
             (request.form['name'], request.form['mobile'], request.form.get('email',''),
              request.form.get('business_name',''), request.form.get('village',''),
              request.form.get('bank_name',''), request.form.get('loan_amount',0) or 0,
-             request.form.get('customer_date',''), customer_id)
+             request.form.get('customer_date',''), request.form.get('birth_date',''), customer_id)
         )
         conn.commit()
         conn.close()
@@ -586,23 +623,45 @@ def generate_ledger_pdf(buffer, customer, services, payments, total_charges, tot
     # ════════════════════════════════════════════════════════════════════
     # 1. HEADER — dark navy full-width banner
     # ════════════════════════════════════════════════════════════════════
-    header_tbl = Table([
-        [Paragraph("GOLD COIN CONSULTANCY FINANCE SERVICES",
-                   ps('HT', fontSize=24, fontName=font_bold,
-                      textColor=WHITE, alignment=TA_CENTER, leading=28))],
-        [Paragraph("Professional Financial Consultancy",
-                   ps('HS', fontSize=12, fontName=font_italic,
-                      textColor=GOLD_LIGHT, alignment=TA_CENTER, leading=15))],
-    ], colWidths=[usable_w])
-    header_tbl.setStyle(TableStyle([
-        ('BACKGROUND',    (0,0),(-1,-1), NAVY),
-        ('TOPPADDING',    (0,0),(-1,0),  10),
-        ('BOTTOMPADDING', (0,0),(-1,0),  2),
-        ('TOPPADDING',    (0,1),(-1,1),  2),
-        ('BOTTOMPADDING', (0,1),(-1,1),  10),
-        ('LEFTPADDING',   (0,0),(-1,-1), 12),
-        ('RIGHTPADDING',  (0,0),(-1,-1), 12),
-    ]))
+    logo_path = resource_path('static/logo.png')
+    has_logo = os.path.exists(logo_path)
+    
+    if has_logo:
+        try:
+            logo_img = Image(logo_path, width=50, height=50)
+            header_tbl = Table([
+                [logo_img, Paragraph("GOLD COIN CONSULTANCY FINANCE SERVICES<br/><font color='#E8C547' size='11'><i>Professional Financial Consultancy</i></font>", 
+                                      ps('HT', fontSize=18, fontName=font_bold, textColor=WHITE, leading=22, alignment=0))]
+            ], colWidths=[65, usable_w - 65])
+            header_tbl.setStyle(TableStyle([
+                ('BACKGROUND',    (0,0),(-1,-1), NAVY),
+                ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+                ('TOPPADDING',    (0,0),(-1,-1), 10),
+                ('BOTTOMPADDING', (0,0),(-1,-1), 10),
+                ('LEFTPADDING',   (0,0),(-1,-1), 12),
+                ('RIGHTPADDING',  (0,0),(-1,-1), 12),
+            ]))
+        except Exception:
+            has_logo = False
+            
+    if not has_logo:
+        header_tbl = Table([
+            [Paragraph("GOLD COIN CONSULTANCY FINANCE SERVICES",
+                       ps('HT', fontSize=24, fontName=font_bold,
+                          textColor=WHITE, alignment=TA_CENTER, leading=28))],
+            [Paragraph("Professional Financial Consultancy",
+                       ps('HS', fontSize=12, fontName=font_italic,
+                          textColor=GOLD_LIGHT, alignment=TA_CENTER, leading=15))],
+        ], colWidths=[usable_w])
+        header_tbl.setStyle(TableStyle([
+            ('BACKGROUND',    (0,0),(-1,-1), NAVY),
+            ('TOPPADDING',    (0,0),(-1,0),  10),
+            ('BOTTOMPADDING', (0,0),(-1,0),  2),
+            ('TOPPADDING',    (0,1),(-1,1),  2),
+            ('BOTTOMPADDING', (0,1),(-1,1),  10),
+            ('LEFTPADDING',   (0,0),(-1,-1), 12),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 12),
+        ]))
     elements.append(header_tbl)
 
     # ════════════════════════════════════════════════════════════════════
@@ -981,8 +1040,25 @@ def settings_page():
                 if row:
                     val = row['value']
             conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, val))
+
+        # Save birthday settings
+        for key in ['birthday_emails_enabled', 'birthday_send_html', 'birthday_include_offer']:
+            val = '1' if request.form.get(key) else '0'
+            conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, val))
+
+        for key in ['birthday_email_time', 'birthday_sender_email']:
+            val = request.form.get(key, '').strip()
+            conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, val))
+
         conn.commit()
         conn.close()
+
+        # Re-initialize the birthday scheduler job with new settings
+        try:
+            setup_birthday_scheduler()
+        except NameError:
+            pass
+
         flash('Settings updated successfully!', 'success')
         return redirect(url_for('settings_page'))
 
@@ -1090,7 +1166,68 @@ try:
     scheduler.add_job(monthly_backup_job, 'cron', day=1, hour=1, minute=0)
     scheduler.start()
 except Exception:
+    scheduler = None
     print('APScheduler not available; monthly backup disabled.')
+
+
+def setup_birthday_scheduler():
+    if not scheduler:
+        return
+    try:
+        conn = get_db()
+        row_enabled = conn.execute("SELECT value FROM settings WHERE key='birthday_emails_enabled'").fetchone()
+        row_time = conn.execute("SELECT value FROM settings WHERE key='birthday_email_time'").fetchone()
+        conn.close()
+
+        enabled = (row_enabled['value'] == '1') if row_enabled else False
+        time_str = row_time['value'] if row_time else '09:00'
+
+        # Remove existing job if any
+        try:
+            scheduler.remove_job('birthday_job')
+        except Exception:
+            pass
+
+        if enabled:
+            try:
+                hour, minute = map(int, time_str.split(':'))
+            except ValueError:
+                hour, minute = 9, 0
+
+            def birthday_job_wrapper():
+                from services.birthday_service import check_and_send_birthdays
+                check_and_send_birthdays(DB_PATH)
+
+            scheduler.add_job(
+                birthday_job_wrapper,
+                'cron',
+                hour=hour,
+                minute=minute,
+                id='birthday_job'
+            )
+            print(f"[OK] Birthday email job scheduled daily at {time_str}")
+    except Exception as e:
+        print(f"Error setting up birthday scheduler: {e}")
+
+
+def run_birthday_check_on_startup():
+    import threading
+    import time
+    def check():
+        time.sleep(5)
+        try:
+            from services.birthday_service import check_and_send_birthdays
+            check_and_send_birthdays(DB_PATH)
+        except Exception as e:
+            print(f"Error running birthday check on startup: {e}")
+    
+    t = threading.Thread(target=check, daemon=True)
+    t.start()
+
+
+# Setup birthday scheduler and run check on startup
+setup_birthday_scheduler()
+run_birthday_check_on_startup()
 
 
 if __name__ == '__main__':

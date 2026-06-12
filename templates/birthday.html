@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Happy Birthday!</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f4f6f9;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #f4f6f9;
+      padding: 20px 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      border: 1px solid #eef2f6;
+    }
+    .header {
+      background: linear-gradient(135deg, #102A43 0%, #1F3A5F 100%);
+      padding: 45px 30px;
+      text-align: center;
+      position: relative;
+    }
+    .badge-logo {
+      display: inline-block;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+    .company-title {
+      color: #FFFFFF;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin: 0 0 8px 0;
+    }
+    .company-subtitle {
+      color: #E8C547;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .confetti-banner {
+      font-size: 32px;
+      margin-top: 15px;
+    }
+    .body-content {
+      padding: 40px 35px;
+      text-align: center;
+    }
+    .greeting {
+      font-size: 28px;
+      font-weight: 800;
+      color: #102A43;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+    .message-text {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #486581;
+      margin-bottom: 30px;
+      margin-top: 0;
+    }
+    .offer-box {
+      background: linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%);
+      border: 2px dashed #F59E0B;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 25px 0;
+      text-align: center;
+    }
+    .offer-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #92400E;
+      margin-top: 0;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .offer-desc {
+      font-size: 14px;
+      color: #B45309;
+      margin: 0;
+      line-height: 1.4;
+    }
+    .divider {
+      height: 1px;
+      background-color: #E2E8F0;
+      margin: 30px 0;
+    }
+    .footer {
+      background-color: #F8FAFC;
+      padding: 35px;
+      text-align: center;
+      border-top: 1px solid #EDF2F7;
+      font-size: 13px;
+      color: #627D98;
+      line-height: 1.6;
+    }
+    .footer-name {
+      font-weight: 700;
+      color: #102A43;
+      margin-bottom: 6px;
+    }
+    .footer-address {
+      font-style: normal;
+      margin-bottom: 12px;
+    }
+    .footer-contacts {
+      font-weight: 500;
+      color: #1F3A5F;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <!-- Header Banner -->
+      <div class="header">
+        <div class="badge-logo"><img src="cid:logo" alt="Logo" style="width:100%; height:100%; object-fit:contain; border-radius:50%;" /></div>
+        <div class="company-title">{{ company_name }}</div>
+        <div class="company-subtitle">Premium Financial Services</div>
+        <div class="confetti-banner">🎉 ✨ 🎈 ✨ 🎉</div>
+      </div>
+      
+      <!-- Card Content -->
+      <div class="body-content">
+        <h1 class="greeting">Happy Birthday, {{ customer_name }}! 🌟</h1>
+        <p class="message-text">
+          Dear {{ customer_name }},<br/><br/>
+          Warmest thoughts and best wishes on your birthday! We hope your special day is filled with joy, and that the coming year brings you abundant happiness, success, and prosperity.<br/><br/>
+          Thank you for being a valued customer of <strong>{{ company_name }}</strong>. It is our absolute privilege to partner with you on your financial journey.
+        </p>
+        
+        {% if include_offer %}
+        <!-- Special Birthday Offer -->
+        <div class="offer-box">
+          <div class="offer-title">🎁 Exclusive Birthday Privilege 🎁</div>
+          <p class="offer-desc">
+            As a small token of our appreciation, enjoy a <strong>15% waiver</strong> on processing fees for your next service request or consult. Simply mention this birthday card upon your next visit!
+          </p>
+        </div>
+        {% endif %}
+        
+        <div class="divider"></div>
+        <p style="font-size: 14px; color: #627D98; margin: 0;">Have a wonderful celebration!</p>
+      </div>
+      
+      <!-- Footer Details -->
+      <div class="footer">
+        <div class="footer-name">{{ company_name }}</div>
+        <div class="footer-address">{{ company_address }}</div>
+        <div class="footer-contacts">
+          📞 {{ contact_1 }} {% if contact_2 %} | {{ contact_2 }} {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

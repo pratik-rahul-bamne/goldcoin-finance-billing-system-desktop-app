@@ -156,3 +156,60 @@ def send_ledger_email(recipient_email, pdf_bytes, pdf_filename, smtp_settings, c
             server.quit()
         except Exception:
             pass
+
+def send_birthday_email(recipient_email, subject, body_html, body_text, smtp_settings):
+    """
+    Sends a birthday email (HTML with plain text fallback and inline logo) to the specified recipient.
+    """
+    if not recipient_email:
+        raise ValueError("Recipient email is required.")
+        
+    server = connect_smtp(smtp_settings)
+    
+    sender_name = smtp_settings.get('smtp_sender_name', 'Gold Coin Consultancy').strip()
+    sender_email = smtp_settings.get('smtp_sender_email', '').strip() or smtp_settings.get('smtp_user', '').strip()
+    
+    # Use 'related' to allow inline images referenced by cid:
+    msg = MIMEMultipart('related')
+    msg['From'] = f"{sender_name} <{sender_email}>"
+    msg['To'] = recipient_email
+    msg['Subject'] = subject
+    
+    # Create the alternative part for text/html fallback
+    msg_alternative = MIMEMultipart('alternative')
+    msg.attach(msg_alternative)
+    
+    # Attach plain text fallback
+    part1 = MIMEText(body_text, 'plain', 'utf-8')
+    msg_alternative.attach(part1)
+    
+    # Attach HTML
+    part2 = MIMEText(body_html, 'html', 'utf-8')
+    msg_alternative.attach(part2)
+    
+    # Attach inline logo image if available
+    import os
+    import sys
+    from email.mime.image import MIMEImage
+    
+    base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+    logo_path = os.path.join(base_dir, 'static', 'logo.png')
+    
+    if os.path.exists(logo_path):
+        try:
+            with open(logo_path, 'rb') as f:
+                img_data = f.read()
+            img = MIMEImage(img_data)
+            img.add_header('Content-ID', '<logo>')
+            img.add_header('Content-Disposition', 'inline', filename='logo.png')
+            msg.attach(img)
+        except Exception as e:
+            print(f"Error attaching logo to birthday email: {e}")
+            
+    try:
+        server.sendmail(sender_email, [recipient_email], msg.as_string())
+    finally:
+        try:
+            server.quit()
+        except Exception:
+            pass
