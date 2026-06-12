@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}Ledger — {{ customer.name }}{% endblock %}
+{% block page_icon %}📄{% endblock %}
+{% block page_title %}Customer Ledger{% endblock %}
+
+{% block content %}
+<div class="page-header no-print">
+  <div>
+    <h1>Ledger — {{ customer.name }}</h1>
+    <div class="breadcrumb">
+      <a href="{{ url_for('index') }}">Dashboard</a> &rsaquo; {{ customer.name }} &rsaquo; Ledger
+    </div>
+  </div>
+  <div class="d-flex gap-8">
+    <a href="{{ url_for('add_services', customer_id=customer.id) }}" class="btn btn-outline btn-sm">🔧 Services</a>
+    <a href="{{ url_for('add_payment', customer_id=customer.id) }}" class="btn btn-outline btn-sm">💰 Payment</a>
+    <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
+    <button id="email-ledger-btn" class="btn btn-outline-gold btn-sm">📧 Email Ledger</button>
+    <a href="{{ url_for('download_pdf', customer_id=customer.id) }}" class="btn btn-primary btn-sm">⬇️ PDF</a>
+    <button id="print-btn" class="btn btn-outline-gold btn-sm">🖨️ Print</button>
+  </div>
+</div>
+
+<!-- Bill Card -->
+<div class="bill-card ledger-container">
+
+  <!-- Header -->
+  <div class="bill-header">
+    <div class="bill-company-name">GOLD COIN CONSULTANCY FINANCE SERVICES</div>
+    <div class="bill-company-sub">Professional Financial Consultancy</div>
+  </div>
+  <div class="bill-title-banner">LEDGER ACCOUNT</div>
+
+  <!-- Customer Info -->
+  <div class="bill-info-grid">
+    <div class="bill-info-label">Customer Name</div>
+    <div class="bill-info-value"><strong>{{ customer.name }}</strong></div>
+    <div class="bill-info-label">Date</div>
+    <div class="bill-info-value">{{ current_date }}</div>
+
+    {% if customer.business_name %}
+    <div class="bill-info-label">Business Name</div>
+    <div class="bill-info-value">{{ customer.business_name }}</div>
+    <div class="bill-info-label"></div>
+    <div class="bill-info-value"></div>
+    {% endif %}
+
+    <div class="bill-info-label">Mobile No.</div>
+    <div class="bill-info-value">{{ customer.mobile }}</div>
+    <div class="bill-info-label">Village</div>
+    <div class="bill-info-value">{{ customer.village or '—' }}</div>
+
+    <div class="bill-info-label">Bank Name</div>
+    <div class="bill-info-value">{{ customer.bank_name or '—' }}</div>
+    <div class="bill-info-label">Loan Amount</div>
+    <div class="bill-info-value">
+      {% if customer.loan_amount %}₹{{ "{:,.0f}".format(customer.loan_amount) }}{% else %}—{% endif %}
+    </div>
+  </div>
+
+  <!-- Ledger Table -->
+  <div class="ledger-table">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-date">Date</th>
+          <th class="col-particulars">Particulars</th>
+          <th class="col-credit">Credit (₹)</th>
+          <th class="col-received">Received (₹)</th>
+          <th class="col-balance">Balance (₹)</th>
+          <th class="no-print" style="width:60px;">Del</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set running = namespace(val=0) %}
+
+        {% for s in services %}
+        {% set running.val = running.val + s.charge %}
+        <tr>
+          <td style="color:var(--text-3); text-align:center;">{{ s.created_at[:10] if s.created_at else '—' }}</td>
+          <td>{{ s.service_name }}</td>
+          <td style="text-align:right; font-weight:600; color:var(--navy);">{{ "{:,.0f}".format(s.charge) }}</td>
+          <td style="text-align:right; color:var(--text-3);">—</td>
+          <td style="text-align:right; font-weight:600;">{{ "{:,.0f}".format(running.val) }}</td>
+          <td class="no-print">
+            <form method="POST" action="{{ url_for('delete_service', service_id=s.id) }}"
+              onsubmit="return confirm('Remove this service?')">
+              <button type="submit" class="btn btn-xs"
+                style="background:var(--danger-bg);color:var(--danger);">✕</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+
+        {% if services %}
+        <tr class="total-row">
+          <td></td>
+          <td style="text-align: right;"><strong>TOTAL CHARGES</strong></td>
+          <td style="text-align:right;"><strong>{{ "{:,.0f}".format(total_charges) }}</strong></td>
+          <td style="text-align:right;">—</td>
+          <td style="text-align:right;"><strong>{{ "{:,.0f}".format(total_charges) }}</strong></td>
+          <td class="no-print"></td>
+        </tr>
+        {% endif %}
+
+        {% for p in payments %}
+        {% set running.val = running.val - p.amount %}
+        <tr class="payment-row">
+          <td style="text-align:center;">{{ p.date }}</td>
+          <td>Payment Received{% if p.note %} <span style="opacity:0.7">({{ p.note
+              }})</span>{% endif %}</td>
+          <td style="text-align:right; color:#065F46;">—</td>
+          <td style="text-align:right; font-weight:600; color:#065F46;">{{ "{:,.0f}".format(p.amount) }}</td>
+          <td style="text-align:right; font-weight:600; color:#065F46;">{{ "{:,.0f}".format(running.val) }}</td>
+          <td class="no-print">
+            <form method="POST" action="{{ url_for('delete_payment', payment_id=p.id) }}"
+              onsubmit="return confirm('Delete this payment?')">
+              <button type="submit" class="btn btn-xs"
+                style="background:var(--danger-bg);color:var(--danger);">✕</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+
+        {% if not services and not payments %}
+        <tr>
+          <td colspan="6" class="table-empty">No transactions yet.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Closing: info strip + balance card (flows after table; table alone may span pages) -->
+  <div class="bill-closing">
+
+    <div class="bill-footer-strip">
+      <div class="bill-strip-cell">
+        <h4>Company</h4>
+        <p><strong>Gold Coin Consultancy Finance Services</strong><br />
+        Laxmi Narayan Nivas Samor, Savarkar Nagar,<br />Vita, Khanapur, Dist. Sangli - 415311</p>
+      </div>
+      <div class="bill-strip-cell">
+        <h4>Contact</h4>
+        <p>Ravikiran: +91 84216 24116<br />Shriyash: +91 90216 74548</p>
+      </div>
+      <div class="bill-strip-cell">
+        <h4>Bank</h4>
+        <p>
+          <strong>Bank:</strong> IDBI Bank<br />
+          <strong>A/C No:</strong> 0640102000009416<br />
+          <strong>IFSC:</strong> IBKL0000640<br />
+          <strong>Branch:</strong> Vita
+        </p>
+      </div>
+    </div>
+
+    <div class="bill-balance-card {% if balance <= 0 %}paid{% else %}unpaid{% endif %}">
+      <div class="bill-balance-main">
+        {% if balance <= 0 %}
+        <div class="bill-balance-label">Account Status</div>
+        <div class="bill-balance-amount">₹ 0.00</div>
+        <div class="bill-balance-sub">✅ FULLY PAID — No outstanding dues</div>
+        {% else %}
+        <div class="bill-balance-label">Outstanding Balance</div>
+        <div class="bill-balance-amount">₹ {{ "{:,.2f}".format(balance) }}</div>
+        <div class="bill-balance-sub">⚠ Please pay before due date</div>
+        {% endif %}
+      </div>
+      <div class="bill-balance-qr">
+        <img src="{{ url_for('static', filename='qr_code.png') }}" alt="Payment QR" />
+        <span>Scan to Pay</span>
+      </div>
+    </div>
+
+    <p class="bill-eoe-note">E. &amp; O.E. — Errors and Omissions Excepted</p>
+  </div>
+
+</div>
+
+<!-- Email Modal Overlay -->
+<div id="emailModal" class="modal-overlay no-print" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(31,58,95,0.4); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+  <div class="modal-card" style="background:white; border-radius:var(--radius); box-shadow:var(--shadow-lg); width:100%; max-width:540px; overflow:hidden; border:1.5px solid var(--border); display:flex; flex-direction:column; animation: modalSlideIn 0.25s var(--ease);">
+    <div class="modal-header" style="background:var(--navy); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; color:white;">
+      <h3 style="margin:0; font-size:1.1rem; font-weight:700;">📧 Email Ledger Statement</h3>
+      <button type="button" class="close-modal-btn" style="background:none; border:none; color:white; font-size:1.25rem; cursor:pointer; opacity:0.75; transition:opacity 0.2s;" onclick="closeEmailModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px; display:flex; flex-direction:column; gap:14px; text-align:left;">
+      <div class="form-group">
+        <label class="form-label" for="recipient_email">Recipient Email Address <span class="required">*</span></label>
+        <input type="email" id="recipient_email" class="form-control" placeholder="e.g. customer@example.com" value="{{ customer.email or '' }}" required />
+        <div class="form-hint">Updating this will also save the email to the customer's profile.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email_subject">Subject</label>
+        <input type="text" id="email_subject" class="form-control" placeholder="Email subject" 
+               value="{{ email_settings.get('email_subject', 'Ledger Statement from Gold Coin Consultancy') }}" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email_body">Message Body</label>
+        <textarea id="email_body" class="form-control" rows="5" style="resize:vertical; font-family:inherit;">{{ email_settings.get('email_body', 'Dear Customer,\n\nPlease find attached the statement of your ledger account.\n\nRegards,\nGold Coin Consultancy') }}</textarea>
+      </div>
+      
+      <!-- Sending status alert -->
+      <div id="email-status-box" class="badge" style="display:none; padding:10px; border-radius:var(--radius-sm); font-size:0.85rem; text-align:center; font-weight:500; margin-top:4px; width:100%;">
+        Sending...
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:14px 20px; background:var(--surface); border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" class="btn btn-outline btn-sm" onclick="closeEmailModal()">Cancel</button>
+      <button type="button" id="confirm-send-email-btn" class="btn btn-gold btn-sm">🚀 Send Email</button>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes modalSlideIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Print uses natural document flow (@page 10mm margins in style.css).
+  // Do not scale or force min-height — that breaks footer pagination.
+  document.querySelectorAll('#print-btn').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      window.print();
+    });
+  });
+
+  // ── Email Ledger Modal JavaScript ──
+  const emailModal = document.getElementById('emailModal');
+  const openEmailModalBtn = document.getElementById('email-ledger-btn');
+  const confirmSendBtn = document.getElementById('confirm-send-email-btn');
+  const statusBox = document.getElementById('email-status-box');
+  const recipientInput = document.getElementById('recipient_email');
+  const subjectInput = document.getElementById('email_subject');
+  const bodyInput = document.getElementById('email_body');
+
+  function openEmailModal() {
+    emailModal.style.display = 'flex';
+    statusBox.style.display = 'none';
+    statusBox.className = 'badge';
+    confirmSendBtn.disabled = false;
+  }
+
+  function closeEmailModal() {
+    emailModal.style.display = 'none';
+  }
+
+  if (openEmailModalBtn) {
+    openEmailModalBtn.addEventListener('click', openEmailModal);
+  }
+
+  if (confirmSendBtn) {
+    confirmSendBtn.addEventListener('click', function() {
+      const recipient = recipientInput.value.trim();
+      const subject = subjectInput.value.trim();
+      const body = bodyInput.value.trim();
+
+      if (!recipient) {
+        alert('Please enter a recipient email address.');
+        recipientInput.focus();
+        return;
+      }
+
+      confirmSendBtn.disabled = true;
+      statusBox.style.display = 'block';
+      statusBox.className = 'badge badge-warning';
+      statusBox.textContent = '⏳ Preparing ledger PDF & sending email...';
+
+      const formData = new FormData();
+      formData.append('recipient_email', recipient);
+      formData.append('email_subject', subject);
+      formData.append('email_body', body);
+
+      fetch(`/customer/{{ customer.id }}/email_ledger`, {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json().then(data => ({ status: response.status, body: data })))
+      .then(result => {
+        if (result.status === 200 && result.body.status === 'success') {
+          statusBox.className = 'badge badge-success';
+          statusBox.textContent = '✅ Email sent successfully!';
+          setTimeout(() => {
+            closeEmailModal();
+            window.location.reload(); // reload to reflect any updated email
+          }, 1500);
+        } else {
+          confirmSendBtn.disabled = false;
+          statusBox.className = 'badge badge-danger';
+          statusBox.textContent = '❌ Failed: ' + (result.body.message || 'Unknown error');
+        }
+      })
+      .catch(error => {
+        confirmSendBtn.disabled = false;
+        statusBox.className = 'badge badge-danger';
+        statusBox.textContent = '❌ Network error: ' + error.message;
+      });
+    });
+  }
+</script>
+{% endblock %}

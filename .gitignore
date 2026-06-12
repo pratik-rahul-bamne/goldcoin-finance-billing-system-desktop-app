@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+.env
+
+# PyInstaller
+*.spec.bak
+dist/
+build/
+
+# SQLite Database (runtime data – do not commit)
+*.db
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Backup runtime files
+backup/
+backup_files/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# pytest cache
+.pytest_cache/
+
+# Distribution / packaging
+*.nsi.bak

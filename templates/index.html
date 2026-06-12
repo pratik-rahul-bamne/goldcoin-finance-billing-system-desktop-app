@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_icon %}🏠{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Welcome Back, Admin 👋</h1>
+    <div class="breadcrumb">Gold Coin Consultancy &rsaquo; Dashboard</div>
+  </div>
+  <div class="d-flex gap-8">
+    <form method="post" action="{{ url_for('backup_now') }}" style="display:inline;">
+      <button type="submit" class="btn btn-success">💾 Backup Now</button>
+    </form>
+    <a href="{{ url_for('restore') }}" class="btn btn-info">🔁 Import Data</a>
+    <a href="{{ url_for('backup_logs') }}" class="btn btn-outline">🧾 View Logs</a>
+    <a href="{{ url_for('add_customer') }}" class="btn btn-gold">➕ Add New Customer</a>
+  </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="stats-grid">
+  <div class="stat-card navy">
+    <div class="stat-icon">👥</div>
+    <div class="stat-info">
+      <div class="stat-label">Total Customers</div>
+      <div class="stat-value">{{ total_customers }}</div>
+    </div>
+  </div>
+  <div class="stat-card gold">
+    <div class="stat-icon">📋</div>
+    <div class="stat-info">
+      <div class="stat-label">Total Charges</div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(total_charges) }}</div>
+    </div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon">✅</div>
+    <div class="stat-info">
+      <div class="stat-label">Total Received</div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(total_received) }}</div>
+    </div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-icon">⚠️</div>
+    <div class="stat-info">
+      <div class="stat-label">Outstanding</div>
+      <div class="stat-value">₹{{ "{:,.0f}".format(total_outstanding) }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Customers Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">📋 All Customers</div>
+    <div class="d-flex gap-8">
+      <a href="{{ url_for('customer_catalog') }}" class="btn btn-outline btn-sm">🔍 Search</a>
+      <a href="{{ url_for('add_customer') }}" class="btn btn-primary btn-sm">➕ Add</a>
+    </div>
+  </div>
+  <div class="table-wrap">
+    {% if customers %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer Name</th>
+          <th>Mobile</th>
+          <th>Village</th>
+          <th>Bank</th>
+          <th>Loan Amount</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in customers %}
+        <tr>
+          <td class="text-muted" style="font-size:0.78rem;">{{ loop.index }}</td>
+          <td>
+            <div class="customer-chip">
+              <div class="customer-avatar">{{ c.name[0].upper() }}</div>
+              <div>
+                <div class="customer-name">{{ c.name }}</div>
+                {% if c.business_name %}<div class="customer-mobile">{{ c.business_name }}</div>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td><span style="font-family:monospace; font-size:0.85rem;">{{ c.mobile }}</span></td>
+          <td>{{ c.village or '—' }}</td>
+          <td>{{ c.bank_name or '—' }}</td>
+          <td>
+            {% if c.loan_amount %}
+              <span class="amount amount-neutral">₹{{ "{:,.0f}".format(c.loan_amount) }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-muted" style="font-size:0.8rem;">{{ c.customer_date or '—' }}</td>
+          <td>
+            <div class="d-flex gap-8" style="flex-wrap:nowrap;">
+              <a href="{{ url_for('bill', customer_id=c.id) }}" class="btn btn-outline-gold btn-xs" title="View Ledger">📄</a>
+              <a href="{{ url_for('add_services', customer_id=c.id) }}" class="btn btn-outline btn-xs" title="Add Services">🔧</a>
+              <a href="{{ url_for('add_payment', customer_id=c.id) }}" class="btn btn-outline btn-xs" title="Add Payment">💰</a>
+              <a href="{{ url_for('edit_customer', customer_id=c.id) }}" class="btn btn-outline btn-xs" title="Edit">✏️</a>
+              <form method="POST" action="{{ url_for('delete_customer', customer_id=c.id) }}" style="display:inline;"
+                    onsubmit="return confirm('Delete {{ c.name }}? This will remove ALL their services and payments.')">
+                <button type="submit" class="btn btn-xs" style="background:var(--danger-bg);color:var(--danger);" title="Delete">🗑️</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="table-empty">
+      <div class="empty-icon">👤</div>
+      <p>No customers yet.</p>
+      <a href="{{ url_for('add_customer') }}" class="btn btn-primary" style="margin-top:14px;">➕ Add First Customer</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

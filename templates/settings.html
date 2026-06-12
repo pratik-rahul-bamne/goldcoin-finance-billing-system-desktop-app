@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% block title %}System Settings{% endblock %}
+{% block page_icon %}⚙️{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>System Configuration</h1>
+    <div class="breadcrumb">Dashboard &rsaquo; Settings</div>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('settings_page') }}" id="settings-form">
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start;">
+    
+    <!-- Left Column: Company & Template Settings -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- Company Profile Card -->
+      <div class="form-section" style="margin-bottom:0;">
+        <div class="form-section-title">🏢 Company Profile</div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="company_name">Company Name</label>
+          <input type="text" id="company_name" name="company_name" class="form-control" 
+                 value="{{ settings.get('company_name', '') }}" required />
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="company_address">Company Address</label>
+          <textarea id="company_address" name="company_address" class="form-control" rows="3" required style="resize:vertical;">{{ settings.get('company_address', '') }}</textarea>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="contact_1">Primary Contact</label>
+            <input type="text" id="contact_1" name="contact_1" class="form-control" 
+                   value="{{ settings.get('contact_1', '') }}" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="contact_2">Secondary Contact</label>
+            <input type="text" id="contact_2" name="contact_2" class="form-control" 
+                   value="{{ settings.get('contact_2', '') }}" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Email Template Settings -->
+      <div class="form-section" style="margin-bottom:0;">
+        <div class="form-section-title">📝 Default Email Template</div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="email_subject">Default Email Subject</label>
+          <input type="text" id="email_subject" name="email_subject" class="form-control" 
+                 value="{{ settings.get('email_subject', 'Ledger Statement from Gold Coin Consultancy') }}" required />
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="email_body">Default Email Body</label>
+          <textarea id="email_body" name="email_body" class="form-control" rows="6" required style="resize:vertical; font-family:inherit;">{{ settings.get('email_body', '') }}</textarea>
+          <div class="form-hint">This text will be pre-filled in the email preview when sending ledgers.</div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- Right Column: SMTP & Connection Testing -->
+    <div style="display:flex; flex-direction:column; gap:24px;">
+      
+      <!-- SMTP Configuration Card -->
+      <div class="form-section" style="margin-bottom:0;">
+        <div class="form-section-title">📧 SMTP Mail Server Configuration</div>
+        
+        <div class="form-grid" style="margin-bottom:14px;">
+          <div class="form-group">
+            <label class="form-label" for="smtp_host">SMTP Host Server</label>
+            <input type="text" id="smtp_host" name="smtp_host" class="form-control" 
+                   placeholder="e.g. smtp.gmail.com" value="{{ settings.get('smtp_host', '') }}" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="smtp_port">SMTP Port</label>
+            <input type="number" id="smtp_port" name="smtp_port" class="form-control" 
+                   placeholder="587" value="{{ settings.get('smtp_port', '587') }}" required />
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-bottom:14px;">
+          <div class="form-group">
+            <label class="form-label" for="smtp_security">Connection Security</label>
+            <select id="smtp_security" name="smtp_security" class="form-control">
+              <option value="STARTTLS" {% if settings.get('smtp_security') == 'STARTTLS' %}selected{% endif %}>STARTTLS (Port 587)</option>
+              <option value="SSL_TLS" {% if settings.get('smtp_security') == 'SSL_TLS' %}selected{% endif %}>SSL/TLS (Port 465)</option>
+              <option value="NONE" {% if settings.get('smtp_security') == 'NONE' %}selected{% endif %}>None (Port 25)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="smtp_sender_name">Sender Name</label>
+            <input type="text" id="smtp_sender_name" name="smtp_sender_name" class="form-control" 
+                   value="{{ settings.get('smtp_sender_name', 'Gold Coin Consultancy') }}" required />
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="smtp_user">SMTP Username / Email</label>
+          <input type="email" id="smtp_user" name="smtp_user" class="form-control" 
+                 placeholder="e.g. yourbusiness@gmail.com" value="{{ settings.get('smtp_user', '') }}" required />
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="smtp_password">SMTP Password / App Password</label>
+          <div style="position:relative;">
+            <input type="password" id="smtp_password" name="smtp_password" class="form-control" 
+                   placeholder="{% if settings.get('smtp_password') %}•••••••• (leave blank to keep unchanged){% else %}Enter SMTP password{% endif %}" 
+                   style="padding-right:45px;" />
+            <button type="button" id="toggle-pw" class="btn-toggle-pw" 
+                    style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; font-size:1.1rem; opacity:0.6; height:100%; display:flex; align-items:center;">👁️</button>
+          </div>
+          <div class="form-hint" style="color:var(--text-2);">
+            <strong>Gmail Users:</strong> You must use a 16-character <em>App Password</em>. Regular passwords will fail due to 2FA requirements.
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" for="smtp_sender_email">Sender Email (Optional)</label>
+          <input type="email" id="smtp_sender_email" name="smtp_sender_email" class="form-control" 
+                 placeholder="Leave empty to use username" value="{{ settings.get('smtp_sender_email', '') }}" />
+        </div>
+      </div>
+
+      <!-- Test SMTP Connection Card -->
+      <div class="form-section" style="margin-bottom:0; background:var(--gold-bg); border-color:var(--gold);">
+        <div class="form-section-title" style="color:var(--gold-dark); border-bottom-color:rgba(201,162,39,0.2);">🧪 Test Mail Server Configuration</div>
+        <p style="font-size:0.8rem; color:var(--text-2); margin-bottom:14px;">
+          Send a quick test message to verify if the server connection credentials are correct.
+        </p>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label class="form-label" for="test_recipient">Recipient Email for Test</label>
+          <input type="email" id="test_recipient" class="form-control" placeholder="e.g. testrecip@example.com" />
+        </div>
+        <button type="button" id="btn-test-smtp" class="btn btn-outline-gold" style="width:100%;">
+          <span>🧪 Send Test Email</span>
+        </button>
+        
+        <!-- Test Output Notification Panel -->
+        <div id="test-result" style="margin-top:14px; display:none;">
+          <div class="badge" id="test-badge" style="display:block; padding:10px; border-radius:var(--radius-sm); text-align:center; font-size:0.85rem; font-weight:500;">
+            Testing...
+          </div>
+          <pre id="test-error-details" style="display:none; margin-top:8px; padding:10px; background:rgba(239,68,68,0.05); border:1px solid rgba(239,68,68,0.2); border-radius:var(--radius-sm); font-size:0.75rem; color:var(--danger); white-space:pre-wrap; font-family:monospace;"></pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="form-actions" style="margin-top:28px;">
+    <button type="submit" class="btn btn-gold">💾 Save Configuration</button>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Toggle password visibility
+  const togglePwBtn = document.getElementById('toggle-pw');
+  const smtpPwInput = document.getElementById('smtp_password');
+  
+  togglePwBtn.addEventListener('click', function() {
+    if (smtpPwInput.type === 'password') {
+      smtpPwInput.type = 'text';
+      togglePwBtn.textContent = '🙈';
+    } else {
+      smtpPwInput.type = 'password';
+      togglePwBtn.textContent = '👁️';
+    }
+  });
+
+  // Test SMTP connection via AJAX
+  const testBtn = document.getElementById('btn-test-smtp');
+  const testRecipientInput = document.getElementById('test_recipient');
+  const testResultDiv = document.getElementById('test-result');
+  const testBadge = document.getElementById('test-badge');
+  const testErrorPre = document.getElementById('test-error-details');
+
+  testBtn.addEventListener('click', function() {
+    const recipient = testRecipientInput.value.trim();
+    if (!recipient) {
+      alert('Please enter a recipient email address for testing.');
+      testRecipientInput.focus();
+      return;
+    }
+
+    // Prepare form data from SMTP configurations
+    const formData = new FormData();
+    formData.append('test_recipient', recipient);
+    formData.append('smtp_host', document.getElementById('smtp_host').value.trim());
+    formData.append('smtp_port', document.getElementById('smtp_port').value.trim());
+    formData.append('smtp_security', document.getElementById('smtp_security').value);
+    formData.append('smtp_sender_name', document.getElementById('smtp_sender_name').value.trim());
+    formData.append('smtp_sender_email', document.getElementById('smtp_sender_email').value.trim());
+    formData.append('smtp_user', document.getElementById('smtp_user').value.trim());
+    
+    // Send password if typed
+    formData.append('smtp_password', smtpPwInput.value);
+
+    // Update UI state to loading
+    testBtn.disabled = true;
+    testBtn.innerHTML = '<span>⏳ Connecting & Sending Test...</span>';
+    testResultDiv.style.display = 'block';
+    testBadge.className = 'badge badge-warning';
+    testBadge.innerHTML = '⚡ Testing SMTP server handshake...';
+    testErrorPre.style.display = 'none';
+
+    fetch('/api/test_smtp', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+    .then(result => {
+      testBtn.disabled = false;
+      testBtn.innerHTML = '<span>🧪 Send Test Email</span>';
+      
+      if (result.status === 200 && result.body.status === 'success') {
+        testBadge.className = 'badge badge-success';
+        testBadge.innerHTML = '✅ SMTP Connection Test Successful! Check your inbox.';
+      } else {
+        testBadge.className = 'badge badge-danger';
+        testBadge.innerHTML = '❌ Connection Failed';
+        testErrorPre.textContent = result.body.message || 'Unknown SMTP error occurred.';
+        testErrorPre.style.display = 'block';
+      }
+    })
+    .catch(error => {
+      testBtn.disabled = false;
+      testBtn.innerHTML = '<span>🧪 Send Test Email</span>';
+      testBadge.className = 'badge badge-danger';
+      testBadge.innerHTML = '❌ Network Request Error';
+      testErrorPre.textContent = error.message || error;
+      testErrorPre.style.display = 'block';
+    });
+  });
+});
+</script>
+{% endblock %}
