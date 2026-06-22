@@ -16,7 +16,7 @@
     <a href="{{ url_for('add_payment', customer_id=customer.id) }}" class="btn btn-outline btn-sm">💰 Payment</a>
     <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-outline btn-sm">✏️ Edit</a>
     <button id="email-ledger-btn" class="btn btn-outline-gold btn-sm">📧 Email Ledger</button>
-    <a href="{{ url_for('download_pdf', customer_id=customer.id) }}" class="btn btn-primary btn-sm">⬇️ PDF</a>
+    <button id="download-pdf-btn" class="btn btn-primary btn-sm">⬇️ PDF</button>
     <button id="print-btn" class="btn btn-outline-gold btn-sm">🖨️ Print</button>
   </div>
 </div>
@@ -26,11 +26,15 @@
 
   <!-- Header -->
   <div class="bill-header">
-    <div style="display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap;">
-      <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" style="height: 64px; width: auto; border-radius: 50%; border: 2px solid var(--gold);" />
-      <div style="text-align: left;">
-        <div class="bill-company-name">GOLD COIN CONSULTANCY FINANCE SERVICES</div>
-        <div class="bill-company-sub" style="margin-top: 5px;">Professional Financial Consultancy</div>
+    <div class="header-container">
+      <div class="header-logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="header-logo" />
+      </div>
+      <div class="header-divider-line"></div>
+      <div class="header-text-container">
+        <div class="company-name">GOLD COIN CONSULTANCY</div>
+        <div class="company-tagline">FINANCE SERVICES</div>
+        <div class="company-desc">Professional Financial Consultancy</div>
       </div>
     </div>
   </div>
@@ -38,29 +42,53 @@
 
   <!-- Customer Info -->
   <div class="bill-info-grid">
+    {% if customer.business_name %}
+    <!-- Row 1: Customer Name & Date -->
     <div class="bill-info-label">Customer Name</div>
     <div class="bill-info-value"><strong>{{ customer.name }}</strong></div>
     <div class="bill-info-label">Date</div>
     <div class="bill-info-value">{{ current_date }}</div>
 
-    {% if customer.business_name %}
+    <!-- Row 2: Business Name & Mobile No. -->
     <div class="bill-info-label">Business Name</div>
     <div class="bill-info-value">{{ customer.business_name }}</div>
+    <div class="bill-info-label">Mobile No.</div>
+    <div class="bill-info-value">{{ customer.mobile }}</div>
+
+    <!-- Row 3: Village & Bank Name -->
+    <div class="bill-info-label">Village</div>
+    <div class="bill-info-value">{{ customer.village or '—' }}</div>
+    <div class="bill-info-label">Bank Name</div>
+    <div class="bill-info-value">{{ customer.bank_name or '—' }}</div>
+
+    <!-- Row 4: Loan Amount & Empty Cell -->
+    <div class="bill-info-label">Loan Amount</div>
+    <div class="bill-info-value">
+      {% if customer.loan_amount %}₹{{ "{:,.0f}".format(customer.loan_amount) }}{% else %}—{% endif %}
+    </div>
     <div class="bill-info-label"></div>
     <div class="bill-info-value"></div>
-    {% endif %}
+    {% else %}
+    <!-- Row 1: Customer Name & Date -->
+    <div class="bill-info-label">Customer Name</div>
+    <div class="bill-info-value"><strong>{{ customer.name }}</strong></div>
+    <div class="bill-info-label">Date</div>
+    <div class="bill-info-value">{{ current_date }}</div>
 
+    <!-- Row 2: Mobile No. & Village -->
     <div class="bill-info-label">Mobile No.</div>
     <div class="bill-info-value">{{ customer.mobile }}</div>
     <div class="bill-info-label">Village</div>
     <div class="bill-info-value">{{ customer.village or '—' }}</div>
 
+    <!-- Row 3: Bank Name & Loan Amount -->
     <div class="bill-info-label">Bank Name</div>
     <div class="bill-info-value">{{ customer.bank_name or '—' }}</div>
     <div class="bill-info-label">Loan Amount</div>
     <div class="bill-info-value">
       {% if customer.loan_amount %}₹{{ "{:,.0f}".format(customer.loan_amount) }}{% else %}—{% endif %}
     </div>
+    {% endif %}
   </div>
 
   <!-- Ledger Table -->
@@ -227,7 +255,28 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="{{ url_for('static', filename='html2pdf.bundle.min.js') }}"></script>
 <script>
+  // Client-side PDF Generation using html2pdf.js
+  document.getElementById('download-pdf-btn').addEventListener('click', function (e) {
+    e.preventDefault();
+    
+    // Target element to export
+    const element = document.querySelector('.bill-card');
+    
+    // Define html2pdf options
+    const opt = {
+      margin:       [10, 10, 10, 10], // 10mm margins [top, left, bottom, right]
+      filename:     'Ledger_{{ customer.name|replace(" ", "_") }}_' + new Date().toISOString().slice(0,10).replace(/-/g, '') + '.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true, logging: false },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    // Generate and save the PDF
+    html2pdf().from(element).set(opt).save();
+  });
+
   // Print uses natural document flow (@page 10mm margins in style.css).
   // Do not scale or force min-height — that breaks footer pagination.
   document.querySelectorAll('#print-btn').forEach(btn => {

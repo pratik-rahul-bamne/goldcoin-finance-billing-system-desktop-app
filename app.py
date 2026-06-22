@@ -628,37 +628,45 @@ def generate_ledger_pdf(buffer, customer, services, payments, total_charges, tot
     
     if has_logo:
         try:
-            logo_img = Image(logo_path, width=50, height=50)
+            logo_img = Image(logo_path, width=54, height=54)
+            # Text block inside Paragraph
+            text_html = (
+                '<font size="18"><b>GOLD COIN CONSULTANCY</b></font><br/>'
+                '<font color="#E8C547" size="13"><b>FINANCE SERVICES</b></font><br/>'
+                '<font color="white" size="10"><i>Professional Financial Consultancy</i></font>'
+            )
+            header_text = Paragraph(text_html, ps('HT', fontName=font_bold, textColor=WHITE, leading=16, alignment=0))
             header_tbl = Table([
-                [logo_img, Paragraph("GOLD COIN CONSULTANCY FINANCE SERVICES<br/><font color='#E8C547' size='11'><i>Professional Financial Consultancy</i></font>", 
-                                      ps('HT', fontSize=18, fontName=font_bold, textColor=WHITE, leading=22, alignment=0))]
+                [logo_img, header_text]
             ], colWidths=[65, usable_w - 65])
             header_tbl.setStyle(TableStyle([
                 ('BACKGROUND',    (0,0),(-1,-1), NAVY),
                 ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
-                ('TOPPADDING',    (0,0),(-1,-1), 10),
-                ('BOTTOMPADDING', (0,0),(-1,-1), 10),
-                ('LEFTPADDING',   (0,0),(-1,-1), 12),
-                ('RIGHTPADDING',  (0,0),(-1,-1), 12),
+                ('LINEAFTER',     (0,0),(0,0), 2, GOLD),
+                ('TOPPADDING',    (0,0),(-1,-1), 12),
+                ('BOTTOMPADDING', (0,0),(-1,-1), 12),
+                ('LEFTPADDING',   (0,0),(0,0), 12),
+                ('RIGHTPADDING',  (0,0),(0,0), 12),
+                ('LEFTPADDING',   (1,0),(1,0), 16),
+                ('RIGHTPADDING',  (1,0),(1,0), 12),
             ]))
         except Exception:
             has_logo = False
             
     if not has_logo:
+        text_html = (
+            '<font size="20"><b>GOLD COIN CONSULTANCY</b></font><br/>'
+            '<font color="#E8C547" size="14"><b>FINANCE SERVICES</b></font><br/>'
+            '<font color="white" size="11"><i>Professional Financial Consultancy</i></font>'
+        )
         header_tbl = Table([
-            [Paragraph("GOLD COIN CONSULTANCY FINANCE SERVICES",
-                       ps('HT', fontSize=24, fontName=font_bold,
-                          textColor=WHITE, alignment=TA_CENTER, leading=28))],
-            [Paragraph("Professional Financial Consultancy",
-                       ps('HS', fontSize=12, fontName=font_italic,
-                          textColor=GOLD_LIGHT, alignment=TA_CENTER, leading=15))],
+            [Paragraph(text_html, ps('HT', fontName=font_bold, textColor=WHITE, leading=18, alignment=TA_CENTER))]
         ], colWidths=[usable_w])
         header_tbl.setStyle(TableStyle([
             ('BACKGROUND',    (0,0),(-1,-1), NAVY),
-            ('TOPPADDING',    (0,0),(-1,0),  10),
-            ('BOTTOMPADDING', (0,0),(-1,0),  2),
-            ('TOPPADDING',    (0,1),(-1,1),  2),
-            ('BOTTOMPADDING', (0,1),(-1,1),  10),
+            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',    (0,0),(-1,-1), 16),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 16),
             ('LEFTPADDING',   (0,0),(-1,-1), 12),
             ('RIGHTPADDING',  (0,0),(-1,-1), 12),
         ]))
@@ -688,33 +696,50 @@ def generate_ledger_pdf(buffer, customer, services, payments, total_charges, tot
         return Paragraph(str(txt), ps(f'IV{uid}', fontSize=11, fontName=font_regular, textColor=TEXT_DARK))
 
     loan_str     = fmt_rupee_no_decimal(customer['loan_amount']) if customer['loan_amount'] else '\u2014'
-    business_str = customer['business_name'] or '\u2014'
 
     lbl_w1 = usable_w * 0.22
     val_w1 = usable_w * 0.28
     lbl_w2 = usable_w * 0.18
     val_w2 = usable_w * 0.32
 
-    ci_rows = [
-        [info_lbl('n', 'Customer Name'), info_val('n', customer['name']),
-         info_lbl('d', 'Date'),          info_val('d', datetime.now().strftime('%d/%m/%Y'))],
-        [info_lbl('b', 'Business'),      info_val('b', business_str),
-         info_lbl('m', 'Mobile No.'),    info_val('m', customer['mobile'])],
-        [info_lbl('v', 'Village'),       info_val('v', customer['village'] or '\u2014'),
-         info_lbl('bk', 'Bank Name'),   info_val('bk', customer['bank_name'] or '\u2014')],
-        [info_lbl('l', 'Loan Amount'),   info_val('l', loan_str),
-         Paragraph('', ps('ep1')),       Paragraph('', ps('ep2'))],
-    ]
-
-    ci_style = [
-        ('BACKGROUND',    (0,0),(-1,-1), SURFACE),
-        ('BOX',           (0,0),(-1,-1), 1, BORDER),
-        ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
-        ('TOPPADDING',    (0,0),(-1,-1), 6),
-        ('BOTTOMPADDING', (0,0),(-1,-1), 6),
-        ('LEFTPADDING',   (0,0),(-1,-1), 12),
-        ('RIGHTPADDING',  (0,0),(-1,-1), 12),
-    ]
+    if customer['business_name']:
+        ci_rows = [
+            [info_lbl('n', 'Customer Name'), info_val('n', customer['name']),
+             info_lbl('d', 'Date'),          info_val('d', datetime.now().strftime('%d/%m/%Y'))],
+            [info_lbl('b', 'Business Name'), info_val('b', customer['business_name']),
+             info_lbl('m', 'Mobile No.'),    info_val('m', customer['mobile'])],
+            [info_lbl('v', 'Village'),       info_val('v', customer['village'] or '\u2014'),
+             info_lbl('bk', 'Bank Name'),    info_val('bk', customer['bank_name'] or '\u2014')],
+            [info_lbl('l', 'Loan Amount'),   info_val('l', loan_str),
+             '', ''],
+        ]
+        ci_style = [
+            ('BACKGROUND',    (0,0),(-1,-1), SURFACE),
+            ('BOX',           (0,0),(-1,-1), 1, BORDER),
+            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',    (0,0),(-1,-1), 6),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 6),
+            ('LEFTPADDING',   (0,0),(-1,-1), 12),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 12),
+        ]
+    else:
+        ci_rows = [
+            [info_lbl('n', 'Customer Name'), info_val('n', customer['name']),
+             info_lbl('d', 'Date'),          info_val('d', datetime.now().strftime('%d/%m/%Y'))],
+            [info_lbl('m', 'Mobile No.'),    info_val('m', customer['mobile']),
+             info_lbl('v', 'Village'),       info_val('v', customer['village'] or '\u2014')],
+            [info_lbl('bk', 'Bank Name'),    info_val('bk', customer['bank_name'] or '\u2014'),
+             info_lbl('l', 'Loan Amount'),   info_val('l', loan_str)],
+        ]
+        ci_style = [
+            ('BACKGROUND',    (0,0),(-1,-1), SURFACE),
+            ('BOX',           (0,0),(-1,-1), 1, BORDER),
+            ('VALIGN',        (0,0),(-1,-1), 'MIDDLE'),
+            ('TOPPADDING',    (0,0),(-1,-1), 6),
+            ('BOTTOMPADDING', (0,0),(-1,-1), 6),
+            ('LEFTPADDING',   (0,0),(-1,-1), 12),
+            ('RIGHTPADDING',  (0,0),(-1,-1), 12),
+        ]
 
     ci_tbl = Table(ci_rows, colWidths=[lbl_w1, val_w1, lbl_w2, val_w2])
     ci_tbl.setStyle(TableStyle(ci_style))
